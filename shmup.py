@@ -2,7 +2,6 @@ import pygame
 import random
 from os import path
 
-
 # SHMUP GAME
 # Frozen Jam by tgfcoder <https://twitter.com/tgfcoder> licensed under CC-BY-3
 # Art from kenney.nl
@@ -13,6 +12,7 @@ snd_dir = path.join(path.dirname(__file__), 'snd')
 WIDTH = 480
 HEIGHT = 600
 FPS = 60
+POWERUP_TIME = 5000
 
 # define colors
 WHITE = (255, 255, 255)
@@ -28,7 +28,6 @@ pygame.mixer.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Shmup!")
 clock = pygame.time.Clock()
-
 
 font_name = pygame.font.match_font("arial")
 
@@ -83,8 +82,14 @@ class Player(pygame.sprite.Sprite):
         self.lives = 3
         self.hidden = False
         self.hide_timer = pygame.time.get_ticks()
+        self.power = 1
+        self.power_time = pygame.time.get_ticks()
 
     def update(self):
+        # timeout for powerups
+        if self.power >= 2 and pygame.time.get_ticks() - self.power_time > POWERUP_TIME:
+            self.power -= 1
+            self.power_time = pygame.time.get_ticks()
         # unhide if hidden
         if self.hidden and pygame.time.get_ticks() - self.hide_timer > 1000:
             self.hidden = False
@@ -105,14 +110,26 @@ class Player(pygame.sprite.Sprite):
         if self.rect.left < 0:
             self.rect.left = 0
 
+    def powerup(self):
+        self.power += 1
+        self.power_time = pygame.time.get_ticks()
+
     def shoot(self):
         now = pygame.time.get_ticks()
         if now - self.last_shot > self.shoot_delay:
             self.last_shot = now
             shoot_sound.play()
-            bullet = Bullet(self.rect.centerx, self.rect.top)
-            all_sprites.add(bullet)
-            bullets.add(bullet)
+            if self.power == 1:
+                bullet = Bullet(self.rect.centerx, self.rect.top)
+                all_sprites.add(bullet)
+                bullets.add(bullet)
+            if self.power >= 2:
+                bullet1 = Bullet(self.rect.left, self.rect.centery)
+                bullet2 = Bullet(self.rect.right, self.rect.centery)
+                all_sprites.add(bullet1)
+                all_sprites.add(bullet2)
+                bullets.add(bullet1)
+                bullets.add(bullet2)
 
     def hide(self):
         # hide player temporarily
@@ -146,7 +163,7 @@ class Pow(pygame.sprite.Sprite):
         self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
         self.rect.center = center
-        self.speedy = 2
+        self.speedy = 4
 
     def update(self):
         self.rect.y += self.speedy
@@ -181,7 +198,6 @@ class Mob(pygame.sprite.Sprite):
             self.image = new_image
             self.rect = self.image.get_rect()
             self.rect.center = old_center
-
 
     def update(self):
         self.rotate()
@@ -251,10 +267,13 @@ powerup_images = {}
 powerup_images["shield"] = pygame.image.load(path.join(img_dir, 'shield_gold.png')).convert()
 powerup_images["gun"] = pygame.image.load(path.join(img_dir, "bolt_gold.png")).convert()
 
-
 # Load all game sounds
 shoot_sound = pygame.mixer.Sound(path.join(snd_dir, "laser1.ogg"))
 shoot_sound.set_volume(0.2)
+shield_sound = pygame.mixer.Sound(path.join(snd_dir, "highUp.ogg"))
+shield_sound.set_volume(0.2)
+power_sound = pygame.mixer.Sound(path.join(snd_dir, "laser9.ogg"))
+power_sound.set_volume(0.2)
 expl_sounds = []
 for snd in ['Explosion.wav', 'Explosion2.wav']:
     sound = pygame.mixer.Sound(path.join(snd_dir, snd))
@@ -263,7 +282,6 @@ for snd in ['Explosion.wav', 'Explosion2.wav']:
 player_die_sound = pygame.mixer.Sound(path.join(snd_dir, "rumble1.ogg"))
 pygame.mixer.music.load(path.join(snd_dir, "tgfcoder-FrozenJam-SeamlessLoop.ogg"))
 pygame.mixer.music.set_volume(0.1)
-
 
 all_sprites = pygame.sprite.Group()
 mobs = pygame.sprite.Group()
@@ -274,10 +292,8 @@ all_sprites.add(player)
 for i in range(8):
     newmob()
 
-
 score = 0
 pygame.mixer.music.play(loops=-1)
-
 
 # Game loop
 running = True
@@ -312,16 +328,17 @@ while running:
     if player.lives == 0 and not death_explosion.alive():
         running = False
 
-
     # check to see if player hit a powerup
     hits = pygame.sprite.spritecollide(player, powerups, True)
     for hit in hits:
         if hit.type == "shield":
+            shield_sound.play()
             player.shield += random.randrange(10, 30)
             if player.shield > 100:
                 player.shield = 100
         if hit.type == "gun":
-            pass
+            power_sound.play()
+            player.powerup()
 
     # check to see if a bullet hit a mob
     hits = pygame.sprite.groupcollide(mobs, bullets, True, True)
