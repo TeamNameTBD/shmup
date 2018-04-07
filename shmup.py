@@ -2,7 +2,13 @@ import pygame
 import random
 from os import path
 
+
+# SHMUP GAME
+# Frozen Jam by tgfcoder <https://twitter.com/tgfcoder> licensed under CC-BY-3
+# Art from kenney.nl
+
 img_dir = path.join(path.dirname(__file__), 'img')
+snd_dir = path.join(path.dirname(__file__), 'snd')
 
 WIDTH = 480
 HEIGHT = 600
@@ -36,7 +42,7 @@ def draw_text(surf, text, size, x, y):
 
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self): 
+    def __init__(self):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.transform.scale(player_img, (50, 38))
         self.image.set_colorkey(BLACK)
@@ -60,6 +66,7 @@ class Player(pygame.sprite.Sprite):
             self.rect.left = 0
 
     def shoot(self):
+        shoot_sound.play()
         bullet = Bullet(self.rect.centerx, self.rect.top)
         all_sprites.add(bullet)
         bullets.add(bullet)
@@ -133,6 +140,15 @@ for img in meteor_list:
     meteor_images.append(pygame.image.load(path.join(img_dir, img)).convert())
 
 
+# Load all game sounds
+shoot_sound = pygame.mixer.Sound(path.join(snd_dir, "laser1.ogg"))
+expl_sounds = []
+for snd in ['Explosion.wav', 'Explosion2.wav']:
+    expl_sounds.append(pygame.mixer.Sound(path.join(snd_dir, snd)))
+pygame.mixer.music.load(path.join(snd_dir, "tgfcoder-FrozenJam-SeamlessLoop.ogg"))
+pygame.mixer.music.set_volume(0.4)
+
+
 all_sprites = pygame.sprite.Group()
 mobs = pygame.sprite.Group()
 bullets = pygame.sprite.Group()
@@ -145,6 +161,7 @@ for i in range(8):
 
 
 score = 0
+pygame.mixer.music.play(loops=-1)
 
 
 # Game loop
@@ -173,6 +190,7 @@ while running:
     hits = pygame.sprite.groupcollide(mobs, bullets, True, True)
     for hit in hits:
         score += 50 - hit.radius
+        random.choice(expl_sounds).play()
         m = Mob()
         all_sprites.add(m)
         mobs.add(m)
