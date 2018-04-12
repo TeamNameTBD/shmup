@@ -82,7 +82,6 @@ def show_go_screen():
                 waiting = False
 
 
-
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
@@ -147,9 +146,9 @@ class Player(pygame.sprite.Sprite):
                 all_sprites.add(bullet2)
                 bullets.add(bullet1)
                 bullets.add(bullet2)
-            if self.power >= 3:
-                bullet1 = Bullet(self.rect.left, self.rect.centery)
-                bullet2 = Bullet(self.rect.right, self.rect.centery)
+            if self.power == 3:
+                bullet1 = Bullet(self.rect.left, self.rect.centery, -1)
+                bullet2 = Bullet(self.rect.right, self.rect.centery, 1)
                 bullet3 = Bullet(self.rect.centerx, self.rect.top)
                 all_sprites.add(bullet1)
                 all_sprites.add(bullet2)
@@ -157,7 +156,22 @@ class Player(pygame.sprite.Sprite):
                 bullets.add(bullet1)
                 bullets.add(bullet2)
                 bullets.add(bullet3)
-
+            if self.power >= 4:
+                bullet1 = Bullet(self.rect.left, self.rect.centery, -1)
+                bullet2 = Bullet(self.rect.right, self.rect.centery, 1)
+                bullet3 = Bullet(self.rect.centerx, self.rect.top)
+                bullet4 = Bullet(self.rect.left, self.rect.centery, -3)
+                bullet5 = Bullet(self.rect.right, self.rect.centery, 3)
+                all_sprites.add(bullet1)
+                all_sprites.add(bullet2)
+                all_sprites.add(bullet3)
+                all_sprites.add(bullet4)
+                all_sprites.add(bullet5)
+                bullets.add(bullet1)
+                bullets.add(bullet2)
+                bullets.add(bullet3)
+                bullets.add(bullet4)
+                bullets.add(bullet5)
 
     def hide(self):
         # hide player temporarily
@@ -167,7 +181,7 @@ class Player(pygame.sprite.Sprite):
 
 
 class Bullet(pygame.sprite.Sprite):
-    def __init__(self, x, y):
+    def __init__(self, x, y, speedx=0):
         pygame.sprite.Sprite.__init__(self)
         self.image = bullet_img
         self.image.set_colorkey(BLACK)
@@ -175,9 +189,11 @@ class Bullet(pygame.sprite.Sprite):
         self.rect.bottom = y
         self.rect.centerx = x
         self.speedy = -10
+        self.speedx = speedx
 
     def update(self):
         self.rect.y += self.speedy
+        self.rect.x += self.speedx
         # kill if it moves off the top of the screen
         if self.rect.bottom < 0:
             self.kill()
